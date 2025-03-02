@@ -190,16 +190,13 @@
             const rubricText = customRubric || '[Meaning Transfer] ' + defaultNAATIDescriptions.meaningTransfer + ' [Textual Norms] ' + defaultNAATIDescriptions.textualNorms + ' [Language Competency] ' + defaultNAATIDescriptions.languageCompetency;
             const [meaningTransferDesc, textualNormsDesc, languageCompetencyDesc] = parseRubricText(rubricText);
 
-            const prompt = {
-                title: "Comprehensive NAATI Translation Assessment",
-                text: `Assess the following translation based on the NAATI Certified Translator rubric for three criteria: Meaning Transfer (pass: Band 2 or above), Application of Textual Norms and Conventions (pass: Band 3 or above), and Language Competency (pass: Band 2 or above). Source Text: "${sourceText}". Student Translation: "${studentTranslation}". Provide a table with each criterion, its band (1-5, where 1 is highest and 5 is lowest), and a brief explanation. Use these descriptions: Meaning Transfer: "${meaningTransferDesc}". Application of Textual Norms: "${textualNormsDesc}". Language Competency: "${languageCompetencyDesc}". Format the response as a Markdown table like this: | Criterion | Band | Explanation |.`
-            };
+            const promptText = `Assess the following translation based on the NAATI Certified Translator rubric for three criteria: Meaning Transfer (pass: Band 2 or above), Application of Textual Norms and Conventions (pass: Band 3 or above), and Language Competency (pass: Band 2 or above). Source Text: "${sourceText}". Student Translation: "${studentTranslation}". Provide a table with each criterion, its band (1-5, where 1 is highest and 5 is lowest), and a brief explanation. Use these descriptions: Meaning Transfer: "${meaningTransferDesc}". Application of Textual Norms: "${textualNormsDesc}". Language Competency: "${languageCompetencyDesc}". Format the response as a Markdown table like this: | Criterion | Band | Explanation |.`;
 
             promptsList.innerHTML = `
                 <div class="prompt-box">
-                    <h4>${prompt.title}</h4>
-                    <p>${prompt.text}</p>
-                    <button class="copy-btn" onclick="copyToClipboard('${encodeURIComponent(prompt.text)}')">Copy</button>
+                    <h4>Comprehensive NAATI Translation Assessment</h4>
+                    <p>${promptText}</p>
+                    <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
                 </div>
             `;
             promptsSection.style.display = 'block';
@@ -237,7 +234,6 @@
             if (match && match.length === 4) {
                 return [match[1].trim(), match[2].trim(), match[3].trim()];
             }
-            // Fallback to NAATI defaults if parsing fails or text is empty
             return [
                 defaultNAATIDescriptions.meaningTransfer,
                 defaultNAATIDescriptions.textualNorms,
@@ -245,12 +241,13 @@
             ];
         }
 
-        function copyToClipboard(encodedText) {
-            const text = decodeURIComponent(encodedText);
-            navigator.clipboard.writeText(text).then(() => {
+        function copyToClipboard(button) {
+            const promptText = button.parentElement.querySelector('p').textContent;
+            navigator.clipboard.writeText(promptText).then(() => {
                 alert('Prompt copied to clipboard!');
             }).catch(err => {
-                alert('Failed to copy: ' + err);
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard. Please try manually selecting and copying the text.');
             });
         }
     </script>
