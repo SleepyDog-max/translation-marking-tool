@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WSU NAATI Translation Marking Prompt Generator</title>
+    <title>NAATI Translation Marking Prompt Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -103,7 +103,7 @@
         }
         .settings-section textarea {
             width: 100%;
-            height: 100px;
+            height: 200px;
             margin-bottom: 10px;
             padding: 10px;
             border: 2px solid #3498db;
@@ -116,16 +116,24 @@
             background-color: #e67e22;
         }
         .reset-btn {
-            background-color: #95a5a6; /* Gray for reset */
+            background-color: #95a5a6;
         }
         .reset-btn:hover {
             background-color: #7f8c8d;
         }
+        #savedCustomRubric {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9ebeb;
+            border: 1px solid #e74c3c;
+            border-radius: 5px;
+            color: #34495e;
+        }
     </style>
 </head>
 <body>
-    <h1>WSU NAATI Translation Marking Prompt Generator</h1>
-    <p>Create a single prompt for your AI chatbot to mark translations based on the NAATI Certified Translator rubric.</p>
+    <h1>NAATI Translation Marking Prompt Generator</h1>
+    <p>Create a single prompt for your AI chatbot to mark student translations based on the NAATI Certified Translator rubric.</p>
     <div class="container">
         <textarea class="text-box" id="sourceText" placeholder="Enter Source Text here..."></textarea>
         <textarea class="text-box" id="studentTranslation" placeholder="Enter Student Translation here..."></textarea>
@@ -147,27 +155,25 @@
         <div id="promptsList"></div>
     </div>
     <div class="settings-section">
-        <h3>Customise Rubric Descriptions</h3>
-        <p>Edit the rubric descriptions below to customise the prompt (leave blank to use defaults):</p>
-        <textarea id="meaningTransferDesc" placeholder="Default: Band 1: Translates intent and content accurately with minimal/no distortions. Band 2: Mostly accurate, minor distortions not affecting core message. Band 3: Some accuracy, significant distortions or core message impacted. Band 4: Limited accuracy, frequent distortions. Band 5: Minimal/no accuracy, excessive distortions."></textarea>
-        <textarea id="textualNormsDesc" placeholder="Default: Band 1: Excellent use of register, style, and terminology appropriate for genre and audience. Band 2: Mostly appropriate use, consistent with target language norms. Band 3: Some appropriate use, but inconsistencies exist. Band 4: Limited use, inconsistent with target language norms. Band 5: Minimal/no appropriate use."></textarea>
-        <textarea id="languageCompetencyDesc" placeholder="Default: Band 1: Consistently competent and idiomatic, no errors. Band 2: Mostly competent, minor errors not impacting understanding. Band 3: Some competency, significant errors impacting quality. Band 4: Limited competency, frequent errors impacting understanding. Band 5: Minimal/no competency, constant errors."></textarea>
+        <h3>Customize Rubric Descriptions</h3>
+        <p>Edit the rubric descriptions below in this format: [Meaning Transfer] description [Textual Norms] description [Language Competency] description (leave blank for NAATI defaults):</p>
+        <textarea id="customRubricDesc" placeholder="Example: [Meaning Transfer] Band 1: Perfect! Band 2: Good enough. [Textual Norms] Band 1: Great style! Band 2: Decent style. [Language Competency] Band 1: Flawless! Band 2: Minor slips."></textarea>
         <button onclick="saveSettings()">Save Settings</button>
         <button class="reset-btn" onclick="resetToNAATIDefaults()">Reset to NAATI Defaults</button>
+        <div id="savedCustomRubric"></div>
     </div>
 
     <script>
-        let customDescriptions = {
-            meaningTransfer: '',
-            textualNorms: '',
-            languageCompetency: ''
-        };
-
         const defaultNAATIDescriptions = {
             meaningTransfer: 'Band 1: Translates the intent and consistently translates the content of the message accurately. Minimal or no distortions, unjustified omissions and/or unjustified additions. Band 2: Translates the intent and mostly translates the content of the message accurately. The distortions, unjustified omissions and/or unjustified additions have a minor impact on the overall precision of the meaning transfer but do not impact the core message. Band 3: Some demonstrated ability to translate the intent and content of the message accurately. The distortions, unjustified omissions and/or unjustified additions, taken together, have a significant impact on the overall precision of the meaning transfer and/or one or more distortions impact the core message. Band 4: Limited demonstrated ability to translate the content and intent of the message accurately. Frequent distortions, unjustified omissions and/or unjustified additions. Band 5: Minimal or no demonstrated ability to translate the content and intent of the message accurately. Excessive distortions, unjustified omissions and/or unjustified additions.',
             textualNorms: 'Band 1: Demonstrates accomplished use of requirements, and the number of specific terminology in a way that is appropriate for the genre and target audience and consistent with the norms and conventions of the target language. Band 2: Demonstrates ability in the use of register, style, text structure and domain-specific terminology in a way that is commonly appropriate for the genre and target audience and mostly consistent with the norms and conventions of the target language. Band 3: Some demonstrated ability to use register, style, text structure and domain-specific terminology in a way that is appropriate for the genre and target audience and consistent with the norms and conventions of the target language. Band 4: Limited demonstrated ability to use register, style, text structure and domain-specific terminology in a way that is appropriate to the genre and target audience and consistent with the norms and conventions of the target language. Band 5: Minimal or no demonstrated ability in the use of register, style, text structure and domain-specific terminology appropriate to the genre and target audience and consistent with the norms and conventions of the target language.',
             languageCompetency: 'Band 1: Consistently uses written language components and momentarily. Any unidiomatic usage and/or errors of lexicon, grammar, syntax, spelling and/or punctuation are isolated and do not impact the overall quality of the translation. Band 2: Mostly uses written language competently and idiomatically. The unidiomatic usage and/or errors of lexicon, grammar, syntax, spelling and/or punctuation have a minor impact on the overall quality of the translation but do not impact the understanding of the target text. Band 3: Some demonstrated ability to use written language competently and idiomatically. The unidiomatic usage and/or errors of lexicon, grammar, syntax, spelling and/or punctuation have a significant impact on the overall quality of the translation and/or one or more errors impact the understanding of the target text. Band 4: Limited demonstrated ability to use written language competently and idiomatically. Unidiomatic usage and/or errors of lexicon, grammar, syntax, spelling and/or punctuation frequently impact the understanding of the target text. Band 5: Minimal or no demonstrated ability to use written language competently and idiomatically. Unidiomatic usage and/or errors in the use of lexicon, grammar, syntax, spelling and/or punctuation constantly impact the understanding of the target text.'
         };
+
+        // Load saved custom rubric from localStorage on page load
+        let customRubric = localStorage.getItem('customRubric') || '';
+        document.getElementById('customRubricDesc').value = customRubric;
+        updateSavedRubricDisplay();
 
         function generatePrompt() {
             const sourceText = document.getElementById('sourceText').value.trim();
@@ -181,9 +187,8 @@
                 return;
             }
 
-            const meaningTransferDesc = customDescriptions.meaningTransfer || defaultNAATIDescriptions.meaningTransfer;
-            const textualNormsDesc = customDescriptions.textualNorms || defaultNAATIDescriptions.textualNorms;
-            const languageCompetencyDesc = customDescriptions.languageCompetency || defaultNAATIDescriptions.languageCompetency;
+            const rubricText = customRubric || '[Meaning Transfer] ' + defaultNAATIDescriptions.meaningTransfer + ' [Textual Norms] ' + defaultNAATIDescriptions.textualNorms + ' [Language Competency] ' + defaultNAATIDescriptions.languageCompetency;
+            const [meaningTransferDesc, textualNormsDesc, languageCompetencyDesc] = parseRubricText(rubricText);
 
             const prompt = {
                 title: "Comprehensive NAATI Translation Assessment",
@@ -207,20 +212,37 @@
         }
 
         function saveSettings() {
-            customDescriptions.meaningTransfer = document.getElementById('meaningTransferDesc').value.trim();
-            customDescriptions.textualNorms = document.getElementById('textualNormsDesc').value.trim();
-            customDescriptions.languageCompetency = document.getElementById('languageCompetencyDesc').value.trim();
-            alert('Custom rubric descriptions saved! Generate a new prompt to apply them.');
+            customRubric = document.getElementById('customRubricDesc').value.trim();
+            localStorage.setItem('customRubric', customRubric);
+            updateSavedRubricDisplay();
+            alert('Custom rubric saved! Generate a new prompt to apply it.');
         }
 
         function resetToNAATIDefaults() {
-            customDescriptions.meaningTransfer = '';
-            customDescriptions.textualNorms = '';
-            customDescriptions.languageCompetency = '';
-            document.getElementById('meaningTransferDesc').value = '';
-            document.getElementById('textualNormsDesc').value = '';
-            document.getElementById('languageCompetencyDesc').value = '';
+            customRubric = '';
+            localStorage.setItem('customRubric', '');
+            document.getElementById('customRubricDesc').value = '';
+            updateSavedRubricDisplay();
             alert('Reset to NAATI default rubric descriptions. Generate a new prompt to use them.');
+        }
+
+        function updateSavedRubricDisplay() {
+            const savedRubricDiv = document.getElementById('savedCustomRubric');
+            savedRubricDiv.innerHTML = customRubric ? `<strong>Saved Custom Rubric:</strong><br>${customRubric}` : '<strong>Saved Custom Rubric:</strong> None (using NAATI defaults)';
+        }
+
+        function parseRubricText(text) {
+            const regex = /\[Meaning Transfer\](.*?)\[Textual Norms\](.*?)\[Language Competency\](.*)/s;
+            const match = text.match(regex);
+            if (match && match.length === 4) {
+                return [match[1].trim(), match[2].trim(), match[3].trim()];
+            }
+            // Fallback to NAATI defaults if parsing fails or text is empty
+            return [
+                defaultNAATIDescriptions.meaningTransfer,
+                defaultNAATIDescriptions.textualNorms,
+                defaultNAATIDescriptions.languageCompetency
+            ];
         }
 
         function copyToClipboard(encodedText) {
